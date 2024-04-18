@@ -43,6 +43,23 @@ class Manzana:
     def dibujar(self, pantalla):
         pygame.draw.rect(pantalla, ROJO, [self.posicion[0], self.posicion[1], TAM_BLOQUE, TAM_BLOQUE])
 
+def parse_position(position_str):
+    """
+    Converts a position string formatted as 'x,y' into a tuple (x, y).
+    
+    Args:
+    position_str (str): The position string to parse.
+
+    Returns:
+    tuple: The parsed position as a tuple (int, int), or (0, 0) if there is an error.
+    """
+    try:
+        x, y = position_str.split(',')
+        return (int(x), int(y))
+    except ValueError:
+        print("Error parsing position data")
+        return (0, 0)
+
 def main():
     pygame.init()
     pantalla = pygame.display.set_mode([ANCHO, ALTO])
@@ -60,7 +77,7 @@ def main():
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
                 running = False
-            elif evento.type == pygame.KEYDOWN:
+            elif evento.type is pygame.KEYDOWN:
                 if evento.key == pygame.K_UP:
                     gusano.direccion = 'UP'
                 elif evento.key == pygame.K_DOWN:
@@ -70,16 +87,18 @@ def main():
                 elif evento.key == pygame.K_RIGHT:
                     gusano.direccion = 'RIGHT'
 
-        gusano.mover()  # Maneja el movimiento y otras lógicas directamente
-        gusano_oponente.mover()
+        gusano.mover()
+        
+        # Send the current position of the gusano to the server
+        n.send(f"{gusano.id}:{gusano.segmentos[0][0]},{gusano.segmentos[0][1]}")
 
-        # Check if the gusano has eaten the manzana
-        if gusano.segmentos[0] == manzana.posicion:
-            # Move the manzana to a new random position
-            manzana.posicion = (random.randrange(0, ANCHO, TAM_BLOQUE), random.randrange(0, ALTO, TAM_BLOQUE))
-            # Increase the length of the gusano
-            gusano.segmentos.append(gusano.segmentos[-1])  # Simple way to grow the gusano
-            gusano.score += 1  # Optional: increase score
+        # Receive the updated position of the opponent from the server
+        opponent_data = n.receive()
+        opponent_pos = parse_position(opponent_data)
+        if opponent_pos:
+            gusano_oponente.segmentos[0] = opponent_pos
+
+        gusano_oponente.mover()
 
         pantalla.fill(NEGRO)
         gusano.dibujar(pantalla)
