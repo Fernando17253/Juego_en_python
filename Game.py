@@ -46,6 +46,49 @@ class Manzana:
 def main():
     pygame.init()
     pantalla = pygame.display.set_mode([ANCHO, ALTO])
+
     n = Network()
-    id = int(n.id)  # Asumiendo que `id` es un atributo de `Network`
-    gusano = Gusano
+    id = int(n.get_player_id())
+    gusano = Gusano(id, (ANCHO / 2, ALTO / 2))
+    gusano_oponente = Gusano(1 - id, (ANCHO / 2, ALTO / 2 + TAM_BLOQUE))
+
+    manzana = Manzana()
+    reloj = pygame.time.Clock()
+
+    running = True
+    while running:
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                running = False
+            elif evento.type == pygame.KEYDOWN:
+                if evento.key == pygame.K_UP:
+                    gusano.direccion = 'UP'
+                elif evento.key == pygame.K_DOWN:
+                    gusano.direccion = 'DOWN'
+                elif evento.key == pygame.K_LEFT:
+                    gusano.direccion = 'LEFT'
+                elif evento.key == pygame.K_RIGHT:
+                    gusano.direccion = 'RIGHT'
+
+        gusano.mover()  # Maneja el movimiento y otras lógicas directamente
+        gusano_oponente.mover()
+
+        # Check if the gusano has eaten the manzana
+        if gusano.segmentos[0] == manzana.posicion:
+            # Move the manzana to a new random position
+            manzana.posicion = (random.randrange(0, ANCHO, TAM_BLOQUE), random.randrange(0, ALTO, TAM_BLOQUE))
+            # Increase the length of the gusano
+            gusano.segmentos.append(gusano.segmentos[-1])  # Simple way to grow the gusano
+            gusano.score += 1  # Optional: increase score
+
+        pantalla.fill(NEGRO)
+        gusano.dibujar(pantalla)
+        gusano_oponente.dibujar(pantalla)
+        manzana.dibujar(pantalla)
+        pygame.display.flip()
+        reloj.tick(10)
+
+    pygame.quit()
+
+if __name__ == "__main__":
+    main()
