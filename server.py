@@ -34,7 +34,7 @@ async def handle_client(reader, writer):
 
 async def main():
     server = await asyncio.start_server(
-        handle_client, 'localhost', 5555)
+        handle_client, '10.10.0.39', 5555)
 
     async with server:
         await server.serve_forever()

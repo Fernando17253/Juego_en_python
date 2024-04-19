@@ -5,7 +5,7 @@ class Network:
 
     def __init__(self):
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.host = "localhost"
+        self.host = "10.10.0.39"
         self.port = 5555
         self.addr = (self.host, self.port)
         self.id = self.connect()
