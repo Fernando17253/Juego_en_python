@@ -107,12 +107,12 @@ def main():
         if gusano1.segmentos[0] == manzana.posicion:
             gusano1.segmentos.append(gusano1.segmentos[-1])
             gusano1.score += 1
-            manzana.posicion = manzana.posicion
+            manzana.posicion = (random.randrange(0, ANCHO - TAM_BLOQUE, TAM_BLOQUE), random.randrange(0, ALTO - TAM_BLOQUE, TAM_BLOQUE))
 
         if gusano2.segmentos[0] == manzana.posicion:
             gusano2.segmentos.append(gusano2.segmentos[-1])
             gusano2.score += 1
-            manzana.posicion = manzana.posicion
+            manzana.posicion = (random.randrange(0, ANCHO - TAM_BLOQUE, TAM_BLOQUE), random.randrange(0, ALTO - TAM_BLOQUE, TAM_BLOQUE))
 
         manzana.dibujar(pantalla)
 
