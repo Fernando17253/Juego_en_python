@@ -1,64 +1,40 @@
+import asyncio
 import socket
 
 class Network:
-    def __init__(self):
-        self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.host = "10.10.0.58"  # IP del servidor
-        self.port = 5555
-        self.addr = (self.host, self.port)
-        self.player_id = None
-        self.connected = False  # Estado de la conexión
+    def __init__(self, host="10.10.0.58", port=5555):
+        self.host = host
+        self.port = port
+        self.reader = None
+        self.writer = None
 
-    def connect(self):
-        if not self.connected:
-            try:
-                self.client.connect(self.addr)
-                self.connected = True
-                print("Connected to the server")
-            except socket.error as e:
-                print(f"Error connecting to the server: {e}")
-                return str(e)
+    async def connect(self):
+        self.reader, self.writer = await asyncio.open_connection(self.host, self.port)
+        print("Connected to the server")
+        
+    async def get_player_id(self):
+        if not self.writer:
+            await self.connect()
+        self.writer.write(b'get_id')
+        await self.writer.drain()
+        data = await self.reader.read(2048)
+        return data.decode()
 
-    def get_player_id(self):
-        """
-        Connect to the server and get the player ID.
-        :return: str
-        """
-        if not self.connected:
-            self.connect()
+    async def send(self, data):
         try:
-            self.player_id = self.client.recv(2048).decode()
-            return self.player_id
-        except socket.error as e:
-            print(f"Error receiving data: {e}")
-            return str(e)
+            self.writer.write(data.encode())
+            await self.writer.drain()
+        except Exception as e:
+            print(f"Send Error: {e}")
+            await self.connect()  # Reconnect and try again
+            self.writer.write(data.encode())
+            await self.writer.drain()
 
-    def send(self, data):
-        """
-        Send data to the server and receive a reply.
-        :param data: str
-        :return: str
-        """
-        if not self.connected:
-            response = self.connect()
-            if response is not None:
-                return response  # Return error if connection failed
-        try:
-            self.client.send(str.encode(data))
-            reply = self.client.recv(2048).decode()
-            return reply
-        except socket.error as e:
-            print(f"Error sending/receiving data: {e}")
-            return str(e)
+    async def receive(self):
+        data = await self.reader.read(2048)
+        return data.decode()
 
     def close(self):
-        """
-        Close the socket connection to the server.
-        """
-        if self.connected:
-            try:
-                self.client.close()
-                self.connected = False
-                print("Connection closed")
-            except socket.error as e:
-                print(f"Error closing the connection: {e}")
+        if self.writer:
+            self.writer.close()
+            print("Connection closed")
