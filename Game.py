@@ -77,22 +77,13 @@ def main():
                 pygame.quit()
                 return
             elif evento.type == pygame.KEYDOWN:
-                if evento.key == pygame.K_w:
-                    gusano.direccion = 'UP'
-                elif evento.key == pygame.K_s:
-                    gusano.direccion = 'DOWN'
-                elif evento.key == pygame.K_a:
-                    gusano.direccion = 'LEFT'
-                elif evento.key == pygame.K_d:
-                    gusano.direccion = 'RIGHT'
-                elif evento.key == pygame.K_UP:
-                    gusanos.direccion = 'UP'
-                elif evento.key == pygame.K_DOWN:
-                    gusanos.direccion = 'DOWN'
-                elif evento.key == pygame.K_LEFT:
-                    gusanos.direccion = 'LEFT'
-                elif evento.key == pygame.K_RIGHT:
-                    gusanos.direccion = 'RIGHT'
+                # Properly reference the correct worm based on user input
+                if evento.key in [pygame.K_w, pygame.K_s, pygame.K_a, pygame.K_d]:
+                    directions = {pygame.K_w: 'UP', pygame.K_s: 'DOWN', pygame.K_a: 'LEFT', pygame.K_d: 'RIGHT'}
+                    gusanos[id].direccion = directions[evento.key]
+                elif evento.key in [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]:
+                    directions = {pygame.K_UP: 'UP', pygame.K_DOWN: 'DOWN', pygame.K_LEFT: 'LEFT', pygame.K_RIGHT: 'RIGHT'}
+                    gusanos[1-id].direccion = directions[evento.key]
         # Actualización de posición basada en teclado hecho aquí
         #gusano1.mover()
         #gusano2.mover()
@@ -133,6 +124,9 @@ def main():
             #gusano2.segmentos.append(gusano2.segmentos[-1])
             #gusano2.score += 1
             #manzana.posicion = (random.randrange(0, ANCHO - TAM_BLOQUE, TAM_BLOQUE), random.randrange(0, ALTO - TAM_BLOQUE, TAM_BLOQUE))
+        
+        for gusano in gusanos:
+            n.send(f"{gusano.id}:{gusano.segmentos[0][0]},{gusano.segmentos[0][1]}")
 
         #manzana.dibujar(pantalla)
 
