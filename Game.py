@@ -17,9 +17,6 @@ ALTO = 600
 # Tamaño de los bloques
 TAM_BLOQUE = 20
 
-# Define the font size for score display
-FONT_SIZE = 28
-
 class Gusano(threading.Thread):
     def __init__(self, id, start_pos):
         threading.Thread.__init__(self)
@@ -53,21 +50,17 @@ class Manzana:
     def dibujar(self, pantalla):
         pygame.draw.rect(pantalla, ROJO, [self.posicion[0], self.posicion[1], TAM_BLOQUE, TAM_BLOQUE])
 
-def draw_score(display, score, position, color=(255, 255, 255)):
-    font = pygame.font.Font(None, FONT_SIZE)
-    text = font.render(f'Score: {score}', True, color)
-    display.blit(text, position)
-
 def main():
     pygame.init()
     pantalla = pygame.display.set_mode([ANCHO, ALTO])
-    pygame.font.init()
     n = Network()
     id = int(n.id)
-    gusanos = [Gusano(0, (ANCHO / 2, ALTO / 2)), Gusano(1, (ANCHO / 2, ALTO / 2 + TAM_BLOQUE))]
-    gusanos[id], gusanos[1-id] = gusanos[1-id], gusanos[id]
-    for gusano in gusanos:
-        gusano.start()
+    gusano1 = Gusano(0, (ANCHO / 2, ALTO / 2))
+    gusano2 = Gusano(1, (ANCHO / 2, ALTO / 2 + TAM_BLOQUE))
+    if id == 1:
+        gusano1, gusano2 = gusano2, gusano1
+    gusano1.start()
+    gusano2.start()
     manzana = Manzana()
     reloj = pygame.time.Clock()
 
@@ -77,62 +70,55 @@ def main():
                 pygame.quit()
                 return
             elif evento.type == pygame.KEYDOWN:
-                # Properly reference the correct worm based on user input
-                if evento.key in [pygame.K_w, pygame.K_s, pygame.K_a, pygame.K_d]:
-                    directions = {pygame.K_w: 'UP', pygame.K_s: 'DOWN', pygame.K_a: 'LEFT', pygame.K_d: 'RIGHT'}
-                    gusanos[id].direccion = directions[evento.key]
-                elif evento.key in [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]:
-                    directions = {pygame.K_UP: 'UP', pygame.K_DOWN: 'DOWN', pygame.K_LEFT: 'LEFT', pygame.K_RIGHT: 'RIGHT'}
-                    gusanos[1-id].direccion = directions[evento.key]
+                if evento.key == pygame.K_w:
+                    gusano1.direccion = 'UP'
+                elif evento.key == pygame.K_s:
+                    gusano1.direccion = 'DOWN'
+                elif evento.key == pygame.K_a:
+                    gusano1.direccion = 'LEFT'
+                elif evento.key == pygame.K_d:
+                    gusano1.direccion = 'RIGHT'
+                elif evento.key == pygame.K_UP:
+                    gusano2.direccion = 'UP'
+                elif evento.key == pygame.K_DOWN:
+                    gusano2.direccion = 'DOWN'
+                elif evento.key == pygame.K_LEFT:
+                    gusano2.direccion = 'LEFT'
+                elif evento.key == pygame.K_RIGHT:
+                    gusano2.direccion = 'RIGHT'
         # Actualización de posición basada en teclado hecho aquí
-        #gusano1.mover()
-        #gusano2.mover()
-        for i, gusano in enumerate(gusanos):
-            gusano.mover()
-            # Send and update positions using your network logic
-            # Check for apple collision
-            if gusano.segmentos[0] == manzana.posicion:
-                gusano.segmentos.append(gusano.segmentos[-1])
-                gusano.score += 1
-                manzana.posicion = (random.randrange(0, ANCHO - TAM_BLOQUE, TAM_BLOQUE), random.randrange(0, ALTO - TAM_BLOQUE, TAM_BLOQUE))
+        gusano1.mover()
+        gusano2.mover()
 
         # Enviar la posición del gusano local al servidor y recibir la posición del otro gusano
-        #respuesta = n.send(f"{gusano1.id}:{gusano1.segmentos[0][0]},{gusano1.segmentos[0][1]}")
+        respuesta = n.send(f"{gusano1.id}:{gusano1.segmentos[0][0]},{gusano1.segmentos[0][1]}")
         # La respuesta contiene la nueva posición del otro gusano
-        #pos = respuesta.split(":")[1].split(",")
+        pos = respuesta.split(":")[1].split(",")
 
         #gusano2.segmentos[0] = (int(pos[0]), int(pos[1]))
 
-        #gusano2.segmentos[0] = (int(float(pos[0])), int(float(pos[1])))
+        gusano2.segmentos[0] = (int(float(pos[0])), int(float(pos[1])))
 
         pantalla.fill(NEGRO)
 
-        #gusano1.dibujar(pantalla)
-        #gusano2.dibujar(pantalla)
-        for gusano in gusanos:
-            gusano.dibujar(pantalla)
+        gusano1.dibujar(pantalla)
+        gusano2.dibujar(pantalla)
+
+        if gusano1.segmentos[0] == manzana.posicion:
+            gusano1.segmentos.append(gusano1.segmentos[-1])
+            gusano1.score += 1
+            manzana.posicion = (random.randrange(0, ANCHO - TAM_BLOQUE, TAM_BLOQUE), random.randrange(0, ALTO - TAM_BLOQUE, TAM_BLOQUE))
+
+        if gusano2.segmentos[0] == manzana.posicion:
+            gusano2.segmentos.append(gusano2.segmentos[-1])
+            gusano2.score += 1
+            manzana.posicion = (random.randrange(0, ANCHO - TAM_BLOQUE, TAM_BLOQUE), random.randrange(0, ALTO - TAM_BLOQUE, TAM_BLOQUE))
+
         manzana.dibujar(pantalla)
-        draw_score(pantalla, gusanos[0].score, (50, 50))
-        draw_score(pantalla, gusanos[1].score, (ANCHO - 150, 50), AZUL)
-
-        #if gusano1.segmentos[0] == manzana.posicion:
-            #gusano1.segmentos.append(gusano1.segmentos[-1])
-            #gusano1.score += 1
-            #manzana.posicion = (random.randrange(0, ANCHO - TAM_BLOQUE, TAM_BLOQUE), random.randrange(0, ALTO - TAM_BLOQUE, TAM_BLOQUE))
-
-        #if gusano2.segmentos[0] == manzana.posicion:
-            #gusano2.segmentos.append(gusano2.segmentos[-1])
-            #gusano2.score += 1
-            #manzana.posicion = (random.randrange(0, ANCHO - TAM_BLOQUE, TAM_BLOQUE), random.randrange(0, ALTO - TAM_BLOQUE, TAM_BLOQUE))
-        
-        for gusano in gusanos:
-            n.send(f"{gusano.id}:{gusano.segmentos[0][0]},{gusano.segmentos[0][1]}")
-
-        #manzana.dibujar(pantalla)
 
         # Enviar información de la posición de los jugadores al servidor
-        #n.send(f"{gusano1.id}:{gusano1.segmentos[0][0]},{gusano1.segmentos[0][1]}")
-        #n.send(f"{gusano2.id}:{gusano2.segmentos[0][0]},{gusano2.segmentos[0][1]}")
+        n.send(f"{gusano1.id}:{gusano1.segmentos[0][0]},{gusano1.segmentos[0][1]}")
+        n.send(f"{gusano2.id}:{gusano2.segmentos[0][0]},{gusano2.segmentos[0][1]}")
 
         pygame.display.flip()
         reloj.tick(10)
